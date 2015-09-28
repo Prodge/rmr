@@ -5,6 +5,11 @@
  *      https://github.com/Prodge/rmr
  *      
  *      rm with additional functionality for recycling files
+ *
+ * Creates the following files in the .rmr/ folder in the users home directory
+ *  - 'db' for storing file information
+ *  - 'log' for storing log information
+ *  - All files being recycled in the 'tmp/' folder
  */
 
 #include <stdio.h>
@@ -16,6 +21,19 @@
 #include <ctype.h>
 #include <unistd.h>
 
+bool toLog(char message[], char filename[]){
+    // Implement this
+}
+
+bool delete(char filename[]){
+    int status = remove(filename);
+    if(status == -1){
+        //toLog('file could not be deleted', filename)
+        //error no has been set, do something with this
+        return false;
+    }
+    return true;
+}
 
 int main(int argc, char **argv){
     int flag;
