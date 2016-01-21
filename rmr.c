@@ -1,9 +1,9 @@
 /**
  * rmr by prodge
- *      
+ *
  *      http://prodge.net
  *      https://github.com/Prodge/rmr
- *      
+ *
  *      rm with additional functionality for recycling files
  *
  * Creates the following files in the .rmr/ folder in the users home directory
@@ -21,10 +21,24 @@
 #include <ctype.h>
 #include <unistd.h>
 
-bool toLog(char message[], char filename[]){
+/*Setting mode to verbose by default*/
+bool verbose = false;
+
+/*Folder containing rmr recycle bin and database*/
+char folder[] = ".rmr";
+
+/*
+ * Writes the input string to the log
+ * Returns true upon success
+ */
+bool toLog(char message[]){
     // Implement this
+    return true;
 }
 
+/*
+ * Permanantly delete file
+ */
 bool delete(char filename[]){
     int status = remove(filename);
     if(status == -1){
@@ -35,12 +49,44 @@ bool delete(char filename[]){
     return true;
 }
 
+/*
+ * Returns true if the system has been initialised
+ *      .rmr folder exists
+ *      DB exists and is in valid state
+ *      recycle bin folder exists
+ */
+bool isInitialised(){
+    //implement this
+    return true;
+}
+
+/*
+ * Initialises the system for rmr
+ *      Creates the rmr folder
+ *      Creates the db
+ *      Creates the recycle bin
+ *      Creates the log file
+ */
+bool initialise(){
+    return true;
+}
+
+
+
 int main(int argc, char **argv){
+    //Initialise the system for rmr if it is not already
+    if(! isInitialised()){
+        if(! initialise()){
+            // The system failed to initialise
+            // Print to stderr
+        }
+    }
+
     int flag;
     if(argc == 1){
         //No arguments supplied
         //Running as silent server
-        
+
         //Monitor db file, check if a file needs to be perm deleted, sleep
         printf("Not yet implemented\n");
         //sleep(60);
@@ -69,7 +115,7 @@ int main(int argc, char **argv){
                     printf("Not yet implemented\n");
                     break;
                 case 'v':   //Run in verbose mode
-                    printf("Not yet implemented\n");
+                    verbose = true;
                     break;
             }
         }
