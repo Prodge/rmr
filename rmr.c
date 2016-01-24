@@ -31,21 +31,74 @@ char folder[] = ".rmr";
  * Writes the input string to the log
  * Returns true upon success
  */
-bool toLog(char message[]){
+bool toLog(char *message){
+    // Print log to stdout if in verbose mode
+    if(verbose)
+        printf("%s\n", message);
+
+    // If logging is enabled...
+
     // Implement this
     return true;
 }
 
 /*
- * Permanantly delete file
+ * Concatenates two given strings
  */
-bool delete(char filename[]){
-    int status = remove(filename);
-    if(status == -1){
-        //toLog('file could not be deleted', filename)
-        //error no has been set, do something with this
+char* concat(char *string1, char *string2){
+    char *result = malloc(strlen(string1) + strlen(string2) + 1);
+    if(result){
+        strcpy(result, string1);
+        strcat(result, string2);
+    }else{
+        toLog("Memory allocation for string concatenation failed.");
+    }
+    return result;
+}
+
+/*
+ * Validates whether a file can be deleted or not
+ * Returns true if the file can be deleted
+ */
+bool canDelete(char *filename){
+    bool state = true;
+    // Validating file Exists
+    if(access(filename, F_OK) == -1)
+        toLog(concat("File does not exist: ", filename));
+        state = false;
+
+    // Validating Read Permission
+    if(access(filename, R_OK) == -1)
+        toLog(concat("User does not have read permission for file: ", filename));
+        state = false;
+
+    // Validating Write Permission
+    if(access(filename, W_OK) == -1)
+        toLog(concat("User does not have write permission for file: ", filename));
+        state = false;
+
+    return state;
+}
+
+/*
+ * Permanantly delete file
+ * Returns true if the deletion was successful
+ */
+bool delete(char *filename){
+    // Checking if file exists and we can delete
+    if(canDelete(filename) != 0){
+        printf("Cannot delete file '%s'\n", filename);
         return false;
     }
+
+    // Attempting to delete file
+    int status = remove(filename);
+    if(status == -1){
+        toLog(concat("File could not be permanantly deleted: ", filename));
+        printf("Cannot delete file '%s'\n", filename);
+        return false;
+    }
+    toLog(concat("File permanantly deleted: ", filename));
     return true;
 }
 
@@ -88,22 +141,22 @@ int main(int argc, char **argv){
         //Running as silent server
 
         //Monitor db file, check if a file needs to be perm deleted, sleep
-        printf("Not yet implemented\n");
+        printf("Server not yet implemented\n");
         //sleep(60);
     }else{
         while((flag = getopt(argc, argv, "d:k:sr:nhcv")) != -1){
             switch(flag){
                 case 'd':   //Delete file for d days
-                    printf("Not yet implemented\n");
+                    printf("Delete is Not yet implemented\n");
                     break;
-                case 'k':   //Move to rmrtmp and never delete
-                    printf("Not yet implemented\n");
+                case 'a':   //archive to rmrtmp and never delete
+                    printf("Archive not yet implemented\n");
                     break;
                 case 's':   //Display status for all files rmrtmp
                     printf("Not yet implemented\n");
                     break;
                 case 'r':   //Recursivley delete files and directories
-                    printf("Not yet implemented\n");
+                    printf("Recursive delete not yet implemented\n");
                     break;
                 case 'n':   //Delete on next boot
                     printf("Not yet implemented\n");
