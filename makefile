@@ -6,10 +6,10 @@ MANDIR = /usr/local/share/man/man1
 
 all: $(EXE)
 
-weather: rmr.o; \
+rmr: rmr.o; \
     $(COMPILER) -o $(EXE) rmr.o
 
-weather.o: rmr.c; \
+rmr.o: rmr.c; \
     $(COMPILER) $(FLAGS) rmr.c
 
 clean:; \
