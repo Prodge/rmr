@@ -1,5 +1,6 @@
 *.swp
 rmr
+run.sh
 
 # Object files
 *.o
