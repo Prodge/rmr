@@ -166,12 +166,22 @@ bool delete(char *filename){
 /*
  * Returns true if the system has been initialized
  *      .rmr folder exists
+ *      log file exists
+ *      recycle folder exists
  *      DB exists and is in valid state
- *      recycle bin folder exists
  */
 bool isInitialized(){
-    //implement this
-    return false;
+    struct stat st= {0};
+    struct stat stu= {0};
+    if(
+        stat(concat(homeFolder, appFolder), &st) == -1 ||
+        access(concat(appPath, logFile), F_OK) == -1 ||
+        stat(concat(appPath, recycle_folder), &stu) == -1 ||
+        access(concat(appPath, databaseName), F_OK) == -1){
+        return false;
+    }else{
+        return true;
+    }
 }
 
 /*
@@ -182,20 +192,20 @@ bool isInitialized(){
  *      Creates the log file
  */
 void initialize(){
-    //Log folder may not be created yet so we buffer any
-    //log outputs here until we know it exists.
-    char *logBuffer = "System required Initialization.\n";
+    if(verbose)
+        printf("System requires Initialization.\n");
 
     // Create rmr folder if it does not exist
     struct stat st= {0};
-    if (stat(concat(homeFolder, appFolder), &st) == -1) {
+    char *logBuffer;
+    if (stat(concat(homeFolder, appFolder), &st) == -1){
         if(mkdir(concat(homeFolder, appFolder), 0777) == -1){
             fprintf(stderr, "Could not create .rmr folder in home directory.\n");
             exit(EXIT_FAILURE);
         }
-        logBuffer = concat(logBuffer, "Created rmr home folder directory.");
+        logBuffer = "Created rmr home folder directory.";
     }else{
-        logBuffer = concat(logBuffer, "rmr home folder directory already exists.");
+        logBuffer = "rmr home folder directory already exists.";
     }
 
     // Create log file if it does not exist
