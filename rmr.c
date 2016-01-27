@@ -26,15 +26,26 @@
 #include <ctype.h>
 #include <unistd.h>
 #include <sqlite3.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 
 /*Upper bound for path length*/
-int PATH_MAX_LENGTH = 511;
+int PATH_MAX_LENGTH = 2000;
 
 /*Setting mode to verbose by default*/
 bool verbose = false;
 
+/*Users home folder*/
+char *homeFolder;
+
 /*Folder containing rmr recycle bin and database*/
-char *folder = ".rmr";
+char *appFolder = ".rmr";
+
+/*Path to appFolder*/
+char *appPath;
+
+/*Folder containing all deleted files*/
+char *recycle_folder = "recycle";
 
 /*Options list*/
 char *options = "d:a:sr:nhcv";
@@ -42,8 +53,14 @@ char *options = "d:a:sr:nhcv";
 /*The directory from which rmr is being run*/
 char *currentDirectory;
 
+/*iFolder containing the log*/
+char *logFile = "rmr.log";
+
 /*Database Pointer*/
 sqlite3 *db;
+
+/*Database Name*/
+char *databaseName = "rmr.db";
 
 /*File states*/
 int STATE_ARCHIVED              = 0;
@@ -150,39 +167,75 @@ bool isInitialized(){
  *      Creates the log file
  */
 void initialize(){
+    //Log folder may not be created yet so we buffer any
+    //log outputs here until we know it exists.
+    char *logBuffer = "System required Initialization.\n";
 
-    // if no rmr folder exists
-    //  create rmr folder
-
-    // if no db exists
-
-    // Creating database
-    toLog("System requires initialization");
-    if(sqlite3_open("test.db", &db)){
-        fprintf(stderr, "Cant open database%s\n", sqlite3_errmsg(db));
-        exit(EXIT_FAILURE);
+    // Create rmr folder if it does not exist
+    struct stat st= {0};
+    if (stat(concat(homeFolder, appFolder), &st) == -1) {
+        if(mkdir(concat(homeFolder, appFolder), 0777) == -1){
+            fprintf(stderr, "Could not create .rmr folder in home directory.\n");
+            exit(EXIT_FAILURE);
+        }
+        logBuffer = concat(logBuffer, "Created rmr home folder directory.");
     }else{
-        toLog("Opened Database Successfully");
+        logBuffer = concat(logBuffer, "rmr home folder directory already exists.");
     }
 
-    // Creating tables
-    char *zErrMsg = 0;
-    char *sql = "CREATE TABLE FILES("  \
-            "ID INT PRIMARY     KEY                 NOT NULL," \
-            "ORIGINAL_PATH      VARCHAR(2000)       NOT NULL," \
-            "FILENAME           VARCHAR(255)        NOT NULL," \
-            "STATE              INT                 NOT NULL," \
-            "DAYS_UNTILL_DELETE INT                 NOT NULL," \
-            "DATE_DELETED       DATETIME            NOT NULL);";
-
-    if(sqlite3_exec(db, sql, NULL, 0, &zErrMsg) == SQLITE_OK){
-        toLog("Successfully Created Files Table");
+    // Create log file if it does not exist
+    if(access(concat(appPath, logFile), F_OK) == -1){
+        fopen(concat(appPath, logFile), "ab+");
+        toLog(logBuffer);
+        toLog("Log file does not exist. Creating log file.");
     }else{
-        fprintf(stderr, "Failed to create Files table");
-        exit(EXIT_FAILURE);
+        toLog(logBuffer);
+        toLog("Log file already exists");
     }
 
+    // Create recycle folder if it does not exist
+    struct stat stu= {0};
+    if (stat(concat(appPath, recycle_folder), &stu) == -1) {
+        if(mkdir(concat(appPath, recycle_folder), 0777) == -1){
+            fprintf(stderr, "Could not create recycle folder in _home_/.rmr.\n");
+            exit(EXIT_FAILURE);
+        }
+        toLog("Recycle folder does not exist. Creating recycle folder.");
+    }else{
+        toLog("Recycle folder already exists.");
+    }
 
+    // Checking if database exists
+    if(access(concat(appPath, databaseName), F_OK) == -1){
+        toLog("Database does not exist. Creating Database.");
+
+        // Creating database
+        if(sqlite3_open(concat(appPath, databaseName), &db)){
+            fprintf(stderr, "Cant open database:\n    %s\n", sqlite3_errmsg(db));
+            exit(EXIT_FAILURE);
+        }else{
+            toLog("Opened Database Successfully");
+        }
+
+        // Creating tables
+        char *zErrMsg = 0;
+        char *sql = "CREATE TABLE FILES("  \
+                "ID INT PRIMARY     KEY                 NOT NULL," \
+                "ORIGINAL_PATH      VARCHAR(2000)       NOT NULL," \
+                "FILENAME           VARCHAR(255)        NOT NULL," \
+                "STATE              INT                 NOT NULL," \
+                "DAYS_UNTILL_DELETE INT                 NOT NULL," \
+                "DATE_DELETED       DATETIME            NOT NULL);";
+
+        if(sqlite3_exec(db, sql, NULL, 0, &zErrMsg) == SQLITE_OK){
+            toLog("Successfully Created Files Table");
+        }else{
+            fprintf(stderr, "Failed to create Files table");
+            exit(EXIT_FAILURE);
+        }
+    }else{
+        toLog("Database already exists.");
+    }
 
     toLog("Successfully Initialized rmr");
 }
@@ -202,6 +255,8 @@ int main(int argc, char **argv){
     // Gotting the current working directory
     char buff[PATH_MAX_LENGTH + 1];
     currentDirectory = getcwd(buff, PATH_MAX_LENGTH + 1);
+    homeFolder = concat(getenv("HOME"), "/");
+    appPath = concat(concat(homeFolder, appFolder), "/");
     if(currentDirectory != NULL){
         toLog(concat("Current working directory set to: ", currentDirectory));
     }else{
@@ -212,7 +267,6 @@ int main(int argc, char **argv){
     // Initialize the system for rmr if it is not already
     if(! isInitialized())
         initialize();
-
 
     int flag;
     if(argc == 1){
