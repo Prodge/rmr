@@ -1,6 +1,8 @@
 *.swp
 rmr
 run.sh
+tmp
+test.db
 
 # Object files
 *.o
