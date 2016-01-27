@@ -28,6 +28,8 @@
 #include <sqlite3.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <errno.h>
+#include <time.h>
 
 /*Upper bound for path length*/
 int PATH_MAX_LENGTH = 2000;
@@ -53,8 +55,11 @@ char *options = "d:a:sr:nhcv";
 /*The directory from which rmr is being run*/
 char *currentDirectory;
 
-/*iFolder containing the log*/
+/*Folder containing the log*/
 char *logFile = "rmr.log";
+
+/*Iis logging enabled*/
+bool logging = true;
 
 /*Database Pointer*/
 sqlite3 *db;
@@ -70,21 +75,6 @@ int STATE_DELETE_IN_N_DAYS      = 3;
 
 
 /*
- * Writes the input string to the log
- * Returns true upon success
- */
-bool toLog(char *message){
-    // Print log to stdout if in verbose mode
-    if(verbose)
-        printf("%s\n", message);
-
-    // If logging is enabled...
-
-    // Implement this
-    return true;
-}
-
-/*
  * Concatenates two given strings
  */
 char* concat(char *string1, char *string2){
@@ -93,9 +83,34 @@ char* concat(char *string1, char *string2){
         strcpy(result, string1);
         strcat(result, string2);
     }else{
-        toLog("Memory allocation for string concatenation failed.");
+        fprintf(stderr, "Could not allocate memory for string concatenation.\n");
+        exit(EXIT_FAILURE);
     }
     return result;
+}
+
+/*
+ * Writes the input string to the log
+ * Returns true upon success
+ */
+void toLog(char *message){
+    // Print log to stdout if in verbose mode
+    if(verbose)
+        printf("%s\n", message);
+
+    // Writing to log file if logging is enabled
+    if(logging){
+        // Getting timestamp
+        time_t timeNow = time(NULL);
+        char *timestamp = asctime(localtime(&timeNow));
+        // Remaving newline char
+        timestamp[strlen(timestamp)-1] = 0;
+
+        FILE *fp;
+        fp = fopen(concat(appPath, logFile), "a");
+        fprintf(fp, "%s:  %s\n", timestamp, message);
+        fclose(fp);
+    }
 }
 
 /*
@@ -257,9 +272,7 @@ int main(int argc, char **argv){
     currentDirectory = getcwd(buff, PATH_MAX_LENGTH + 1);
     homeFolder = concat(getenv("HOME"), "/");
     appPath = concat(concat(homeFolder, appFolder), "/");
-    if(currentDirectory != NULL){
-        toLog(concat("Current working directory set to: ", currentDirectory));
-    }else{
+    if(currentDirectory == NULL){
         fprintf(stderr, "Could not get current working directory\n");
         exit(EXIT_FAILURE);
     }
