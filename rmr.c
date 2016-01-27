@@ -45,6 +45,12 @@ char *currentDirectory;
 /*Database Pointer*/
 sqlite3 *db;
 
+/*File states*/
+int STATE_ARCHIVED              = 0;
+int STATE_DELETED               = 1;
+int STATE_DELETE_ON_NEXT_BOOT   = 2;
+int STATE_DELETE_IN_N_DAYS      = 3;
+
 
 /*
  * Writes the input string to the log
@@ -162,11 +168,12 @@ void initialize(){
     // Creating tables
     char *zErrMsg = 0;
     char *sql = "CREATE TABLE FILES("  \
-            "ID INT PRIMARY KEY     NOT NULL," \
-            "NAME           TEXT    NOT NULL," \
-            "AGE            INT     NOT NULL," \
-            "ADDRESS        CHAR(50)," \
-            "SALARY         REAL );";
+            "ID INT PRIMARY     KEY                 NOT NULL," \
+            "ORIGINAL_PATH      VARCHAR(2000)       NOT NULL," \
+            "FILENAME           VARCHAR(255)        NOT NULL," \
+            "STATE              INT                 NOT NULL," \
+            "DAYS_UNTILL_DELETE INT                 NOT NULL," \
+            "DATE_DELETED       DATETIME            NOT NULL);";
 
     if(sqlite3_exec(db, sql, NULL, 0, &zErrMsg) == SQLITE_OK){
         toLog("Successfully Created Files Table");
@@ -218,7 +225,7 @@ int main(int argc, char **argv){
     }else{
         while((flag = getopt(argc, argv, options)) != -1){
             switch(flag){
-                case 'd':   //Delete file for d days
+                case 'd':   //Delete file in d days
                     printf("Delete is Not yet implemented\n");
                     break;
                 case 'a':   //archive to rmrtmp and never delete
